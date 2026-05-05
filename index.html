@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Job Report Pro</title>
+
+<!-- Cropper -->
+<link href="https://unpkg.com/cropperjs/dist/cropper.min.css" rel="stylesheet"/>
+<script src="https://unpkg.com/cropperjs"></script>
+
+<!-- Sortable -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<!-- jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+body {
+  font-family: Arial;
+  padding: 15px;
+  background: #f4f4f4;
+}
+
+input, textarea {
+  width: 100%;
+  margin: 10px 0;
+  padding: 10px;
+}
+
+#gallery {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.card {
+  background: white;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.card img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+}
+
+button {
+  padding: 8px;
+  margin-top: 5px;
+}
+
+#cropModal {
+  position: fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background: rgba(0,0,0,0.8);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+}
+
+#cropModal img {
+  max-width:90%;
+}
+
+</style>
+</head>
+
+<body>
+
+<h2>Job Report</h2>
+
+<input id="title" placeholder="Job Title">
+<textarea id="desc" placeholder="Description"></textarea>
+
+<input type="file" id="images" multiple accept="image/*">
+
+<div id="gallery"></div>
+
+<br>
+<button onclick="generatePDF()">Generate PDF</button>
+
+<!-- Crop Modal -->
+<div id="cropModal">
+  <img id="cropImage">
+  <br>
+  <button onclick="cropSave()">Save Crop</button>
+  <button onclick="closeCrop()">Cancel</button>
+</div>
+
+<script>
+const { jsPDF } = window.jspdf;
+
+let imagesData = [];
+let cropper;
+let currentCropIndex = null;
+
+// Upload
+document.getElementById("images").addEventListener("change", async (e) => {
+  for (let file of e.target.files) {
+    const base64 = await toBase64(file);
+    imagesData.push({
+      edited: base64,
+      type: "before"
+    });
+  }
+  renderGallery();
+});
+
+// Convert
+function toBase64(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.readAsDataURL(file);
+  });
+}
+
+// Render UI
+function renderGallery() {
+  const gallery = document.getElementById("gallery");
+  gallery.innerHTML = "";
+
+  imagesData.forEach((img, i) => {
+    const div = document.createElement("div");
+    div.className = "card";
+
+    div.innerHTML = `
+      <img src="${img.edited}">
+      <div class="controls">
+        <button onclick="setType(${i}, 'before')">Before</button>
+        <button onclick="setType(${i}, 'after')">After</button>
+      </div>
+      <div class="controls">
+        <button onclick="openCrop(${i})">Crop</button>
+        <button onclick="rotate(${i})">Rotate</button>
+        <button onclick="removeImg(${i})">Delete</button>
+      </div>
+    `;
+
+    gallery.appendChild(div);
+  });
+
+  new Sortable(gallery, { animation: 150 });
+}
+
+// Type
+function setType(i, type) {
+  imagesData[i].type = type;
+}
+
+// Remove
+function removeImg(i) {
+  imagesData.splice(i, 1);
+  renderGallery();
+}
+
+// Rotate
+function rotate(i) {
+  const img = new Image();
+  img.src = imagesData[i].edited;
+
+  img.onload = () => {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = img.height;
+    canvas.height = img.width;
+
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate(Math.PI / 2);
+    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+
+    imagesData[i].edited = canvas.toDataURL("image/jpeg");
+    renderGallery();
+  };
+}
+
+// Crop
+function openCrop(i) {
+  currentCropIndex = i;
+  document.getElementById("cropModal").style.display = "flex";
+
+  const img = document.getElementById("cropImage");
+  img.src = imagesData[i].edited;
+
+  cropper = new Cropper(img, { viewMode: 1 });
+}
+
+function cropSave() {
+  const canvas = cropper.getCroppedCanvas();
+  imagesData[currentCropIndex].edited = canvas.toDataURL("image/jpeg");
+
+  closeCrop();
+  renderGallery();
+}
+
+function closeCrop() {
+  cropper.destroy();
+  document.getElementById("cropModal").style.display = "none";
+}
+
+// Pair images
+function getPairs() {
+  const before = imagesData.filter(i => i.type === "before");
+  const after = imagesData.filter(i => i.type === "after");
+
+  const pairs = [];
+
+  for (let i = 0; i < Math.max(before.length, after.length); i++) {
+    pairs.push({
+      before: before[i],
+      after: after[i]
+    });
+  }
+  return pairs;
+}
+
+// PDF
+function generatePDF() {
+  const title = document.getElementById("title").value;
+  const desc = document.getElementById("desc").value;
+
+  if (!title || !desc || imagesData.length === 0) {
+    alert("Complete all fields");
+    return;
+  }
+
+  const pdf = new jsPDF("p", "mm", "a4");
+
+  const margin = 10;
+  const pageWidth = 210;
+
+  const imgWidth = (pageWidth - margin * 3) / 2;
+  const imgHeight = 85;
+
+  const pairs = getPairs();
+
+  let page = 1;
+
+  for (let i = 0; i < pairs.length; i += 2) {
+
+    if (i !== 0) pdf.addPage();
+
+    // HEADER
+    pdf.setFontSize(14);
+    pdf.text(title, margin, 15);
+
+    pdf.setFontSize(10);
+    pdf.text(desc, margin, 22, { maxWidth: 180 });
+
+    let yTop = 35;
+
+    drawPair(pdf, pairs[i], yTop, imgWidth, imgHeight, margin);
+
+    if (pairs[i + 1]) {
+      let yBottom = yTop + imgHeight + 20;
+      drawPair(pdf, pairs[i + 1], yBottom, imgWidth, imgHeight, margin);
+    }
+
+    // FOOTER
+    pdf.text(`Page ${page++}`, 180, 290);
+  }
+
+  pdf.save("job-report.pdf");
+}
+
+// Draw pair
+function drawPair(pdf, pair, y, imgWidth, imgHeight, margin) {
+
+  pdf.text("Before", margin, y);
+  pdf.text("After", margin + imgWidth + margin, y);
+
+  y += 5;
+
+  if (pair.before) {
+    pdf.addImage(pair.before.edited, "JPEG", margin, y, imgWidth, imgHeight);
+  }
+
+  if (pair.after) {
+    pdf.addImage(pair.after.edited, "JPEG", margin + imgWidth + margin, y, imgWidth, imgHeight);
+  }
+
+  pdf.rect(margin, y, imgWidth, imgHeight);
+  pdf.rect(margin + imgWidth + margin, y, imgWidth, imgHeight);
+}
+</script>
+
+</body>
+</html>
