@@ -280,6 +280,20 @@ function draw(pdf, p, y, w, h, m) {
   pdf.rect(m, imgY, w, h);
   pdf.rect(m + w + m, imgY, w, h);
 }
+
+const jobTypeSelect = document.getElementById("jobType");
+const descField = document.getElementById("desc");
+
+jobTypeSelect.addEventListener("change", () => {
+  if (jobTypeSelect.value === "Repair / Maintenance") {
+    descField.placeholder = "Issue:\n- \n\nSolution:\n- ";
+    descField.value = "Issue:\n- \n\nSolution:\n- ";
+  } else {
+    descField.placeholder = "Job Description";
+    descField.value = "";
+  }
+});
+  
 </script>
 
 </body>
