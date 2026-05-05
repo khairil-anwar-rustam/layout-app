@@ -125,9 +125,11 @@ document.getElementById("images").addEventListener("change", async (e) => {
   const files = Array.from(e.target.files);
 
   for (let file of files) {
-    const url = URL.createObjectURL(file);
+
+    const compressed = await compressImage(file);
+
     imagesData.push({
-      src: url,
+      src: compressed,
       type: "before"
     });
   }
@@ -293,7 +295,41 @@ jobTypeSelect.addEventListener("change", () => {
     descField.value = "";
   }
 });
-  
+
+
+async function compressImage(file) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      img.src = e.target.result;
+    };
+
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+
+      // 🔥 resize (important)
+      const maxWidth = 1000;
+      const scale = maxWidth / img.width;
+
+      canvas.width = maxWidth;
+      canvas.height = img.height * scale;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      // 🔥 compress quality (0.6 = sweet spot)
+      const compressedData = canvas.toDataURL("image/jpeg", 0.6);
+
+      resolve(compressedData);
+    };
+
+    reader.readAsDataURL(file);
+  });
+        }
+
+      
 </script>
 
 </body>
