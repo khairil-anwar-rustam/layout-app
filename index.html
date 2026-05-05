@@ -209,40 +209,50 @@ function generatePDF() {
     return;
   }
 
-  const pdf = new jsPDF("p","mm","a4");
+  const pdf = new jsPDF("p", "mm", "a4");
 
   const margin = 10;
-  const w = 210;
+  const pageW = 210;
 
-  const imgW = (w - margin*3)/2;
-  const imgH = 80;
+  const imgW = (pageW - margin * 3) / 2;
+  const imgH = 70;
 
   const pairs = getPairs();
 
   let page = 1;
 
+  // safer line height control
+  const lineHeight = 5;
+
   for (let i = 0; i < pairs.length; i += 2) {
 
     if (i !== 0) pdf.addPage();
 
+    // ===== HEADER =====
     pdf.setFontSize(14);
     pdf.text(title, margin, 15);
 
-    // ADDED JOB TYPE IN PDF
     pdf.setFontSize(11);
     pdf.text("Type: " + jobType, margin, 21);
 
+    // ===== PROPER WRAPPED DESCRIPTION =====
     pdf.setFontSize(10);
-    pdf.text(desc, margin, 28, { maxWidth: 180 });
+    const descLines = pdf.splitTextToSize(desc, 180);
+    pdf.text(descLines, margin, 28);
 
-    let y = 40;
+    // dynamically calculate height of description
+    const descHeight = descLines.length * lineHeight;
 
+    let y = 28 + descHeight + 8;
+
+    // ===== DRAW PAIR BLOCKS =====
     draw(pdf, pairs[i], y, imgW, imgH, margin);
 
-    if (pairs[i+1]) {
-      draw(pdf, pairs[i+1], y + imgH + 20, imgW, imgH, margin);
+    if (pairs[i + 1]) {
+      draw(pdf, pairs[i + 1], y + imgH + 18, imgW, imgH, margin);
     }
 
+    pdf.setFontSize(10);
     pdf.text("Page " + page++, 180, 290);
   }
 
@@ -252,20 +262,23 @@ function generatePDF() {
 /* ================= DRAW PAIR ================= */
 function draw(pdf, p, y, w, h, m) {
 
+  // clean label spacing
   pdf.setFontSize(11);
+
   pdf.text("Before", m, y);
   pdf.text("After", m + w + m, y);
 
-  y += 5;
+  const imgY = y + 5;
 
   if (p.before)
-    pdf.addImage(p.before.src, "JPEG", m, y, w, h);
+    pdf.addImage(p.before.src, "JPEG", m, imgY, w, h);
 
   if (p.after)
-    pdf.addImage(p.after.src, "JPEG", m + w + m, y, w, h);
+    pdf.addImage(p.after.src, "JPEG", m + w + m, imgY, w, h);
 
-  pdf.rect(m, y, w, h);
-  pdf.rect(m + w + m, y, w, h);
+  // border
+  pdf.rect(m, imgY, w, h);
+  pdf.rect(m + w + m, imgY, w, h);
 }
 </script>
 
