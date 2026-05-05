@@ -27,7 +27,7 @@ h2 {
   text-align: center;
 }
 
-input, textarea {
+input, textarea, select {
   width: 100%;
   padding: 12px;
   margin: 8px 0;
@@ -71,7 +71,6 @@ button {
   transition: opacity 0.25s ease;
 }
 
-/* smooth toggle animation */
 .fade {
   opacity: 0.3;
 }
@@ -99,6 +98,13 @@ button {
 <h2>📄 Job Report</h2>
 
 <input id="title" placeholder="Job Title">
+
+<!-- ADDED JOB TYPE SELECT -->
+<select id="jobType">
+  <option value="New Installation">New Installation</option>
+  <option value="Repair / Maintenance">Repair / Maintenance</option>
+</select>
+
 <textarea id="desc" placeholder="Job Description"></textarea>
 
 <input type="file" id="images" multiple accept="image/*">
@@ -118,9 +124,8 @@ let imagesData = [];
 document.getElementById("images").addEventListener("change", async (e) => {
   const files = Array.from(e.target.files);
 
-  // FAST batch load (better performance)
   for (let file of files) {
-    const url = URL.createObjectURL(file); // ⚡ faster than base64
+    const url = URL.createObjectURL(file);
     imagesData.push({
       src: url,
       type: "before"
@@ -155,11 +160,9 @@ function render() {
   });
 }
 
-/* ================= SMOOTH TOGGLE ================= */
+/* ================= TOGGLE ================= */
 function toggle(i) {
   const img = document.getElementById("img-" + i);
-
-  // smooth visual feedback
   img.classList.add("fade");
 
   setTimeout(() => {
@@ -198,6 +201,7 @@ function getPairs() {
 /* ================= PDF ================= */
 function generatePDF() {
   const title = document.getElementById("title").value;
+  const jobType = document.getElementById("jobType").value;
   const desc = document.getElementById("desc").value;
 
   if (!title || !desc) {
@@ -224,10 +228,14 @@ function generatePDF() {
     pdf.setFontSize(14);
     pdf.text(title, margin, 15);
 
-    pdf.setFontSize(10);
-    pdf.text(desc, margin, 22, { maxWidth: 180 });
+    // ADDED JOB TYPE IN PDF
+    pdf.setFontSize(11);
+    pdf.text("Type: " + jobType, margin, 21);
 
-    let y = 35;
+    pdf.setFontSize(10);
+    pdf.text(desc, margin, 28, { maxWidth: 180 });
+
+    let y = 40;
 
     draw(pdf, pairs[i], y, imgW, imgH, margin);
 
