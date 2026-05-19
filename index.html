@@ -1,11 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>Network Layout PRO Fiber Core</title>
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width,
+initial-scale=1.0,
+maximum-scale=1.0,
+user-scalable=no">
 
+<title>Fiber Network Layout PRO</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/konva/9.3.11/konva.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 
@@ -21,9 +28,9 @@ html,body{
   height:100%;
   overflow:hidden;
   background:#0f172a;
-  color:white;
   font-family:Arial;
   touch-action:none;
+  color:white;
 }
 
 body{
@@ -31,32 +38,186 @@ body{
   inset:0;
 }
 
-/* TOP BAR */
+#app{
+  width:100%;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+}
+
+/* =======================
+TOP TOOLBAR
+======================= */
+
 #toolbar{
-  height:55px;
+  height:60px;
+  min-height:60px;
   background:#111827;
   display:flex;
   align-items:center;
   gap:8px;
   padding:6px;
   overflow-x:auto;
-  white-space:nowrap;
+  border-bottom:1px solid #1e293b;
 }
 
-button,select{
+#toolbar::-webkit-scrollbar{
+  display:none;
+}
+
+button,
+select,
+input{
   border:none;
-  border-radius:8px;
+  border-radius:10px;
   background:#1e293b;
   color:white;
-  padding:8px 10px;
-  font-size:12px;
+  padding:8px 12px;
+  font-size:13px;
+  flex-shrink:0;
 }
 
-/* CANVAS */
-#stage{
+button:active{
+  transform:scale(0.95);
+}
+
+/* =======================
+MAIN
+======================= */
+
+#main{
+  flex:1;
+  display:flex;
+  overflow:hidden;
+  position:relative;
+}
+
+/* =======================
+SIDEBAR
+======================= */
+
+#sidebar{
+  width:250px;
+  background:#111827;
+  overflow-y:auto;
+  border-right:1px solid #1e293b;
+  padding:12px;
+  transition:0.3s;
+  z-index:50;
+}
+
+.section{
+  margin-bottom:22px;
+}
+
+.section h3{
+  color:#38bdf8;
+  margin-bottom:10px;
+}
+
+.device-btn{
   width:100%;
-  height:calc(100% - 55px);
+  text-align:left;
+  margin-bottom:6px;
+}
+
+/* =======================
+CANVAS
+======================= */
+
+#canvas-container{
+  flex:1;
+  position:relative;
+  overflow:hidden;
   background:#1e293b;
+}
+
+#stage-parent{
+  width:100%;
+  height:100%;
+}
+
+/* =======================
+PROPERTIES
+======================= */
+
+#properties{
+  position:absolute;
+  top:10px;
+  right:10px;
+  width:200px;
+  background:#111827;
+  border:1px solid #334155;
+  border-radius:12px;
+  padding:10px;
+  z-index:100;
+}
+
+#properties input{
+  width:100%;
+  margin-bottom:8px;
+}
+
+/* =======================
+MENU BUTTON
+======================= */
+
+#menuBtn{
+  display:none;
+  position:absolute;
+  left:10px;
+  bottom:10px;
+  width:50px;
+  height:50px;
+  border-radius:50%;
+  background:#38bdf8;
+  font-size:22px;
+  z-index:200;
+}
+
+/* =======================
+LEGEND
+======================= */
+
+.legend-item{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:6px;
+}
+
+.color-box{
+  width:20px;
+  height:20px;
+  border-radius:5px;
+}
+
+/* =======================
+MOBILE
+======================= */
+
+@media(max-width:768px){
+
+  #sidebar{
+    position:absolute;
+    left:-260px;
+    top:0;
+    bottom:0;
+    width:220px;
+  }
+
+  #sidebar.show{
+    left:0;
+  }
+
+  #menuBtn{
+    display:block;
+  }
+
+  #properties{
+    width:150px;
+  }
+
 }
 
 </style>
@@ -64,114 +225,669 @@ button,select{
 
 <body>
 
+<div id="app">
+
+<!-- =======================
+TOP TOOLBAR
+======================= -->
+
 <div id="toolbar">
 
+<input
+type="file"
+id="upload"
+accept="application/pdf,image/*">
+
 <select id="fiberCore">
-  <option value="1">1 Core</option>
-  <option value="2">2 Core</option>
-  <option value="4">4 Core</option>
-  <option value="6">6 Core</option>
-  <option value="8">8 Core</option>
-  <option value="12">12 Core</option>
+
+<option value="1">1 Core</option>
+<option value="2">2 Core</option>
+<option value="4">4 Core</option>
+<option value="6">6 Core</option>
+<option value="8">8 Core</option>
+<option value="12">12 Core</option>
+
 </select>
 
-<button onclick="setTool('fiber')">Fiber</button>
-<button onclick="setTool('move')">Move</button>
+<button onclick="setTool('select')">
+Select
+</button>
+
+<button onclick="setTool('fiber')">
+Fiber
+</button>
+
+<button onclick="setTool('network')">
+Network
+</button>
+
+<button onclick="setTool('cctv')">
+CCTV
+</button>
+
+<button onclick="setTool('power')">
+Power
+</button>
+
+<button onclick="clearCanvas()">
+Clear
+</button>
+
+<button onclick="exportPDF()">
+Export
+</button>
 
 </div>
 
-<div id="stage"></div>
+<!-- =======================
+MAIN
+======================= -->
+
+<div id="main">
+
+<!-- =======================
+SIDEBAR
+======================= -->
+
+<div id="sidebar">
+
+<div class="section">
+
+<h3>Devices</h3>
+
+<button class="device-btn"
+onclick="addDevice('camera')">
+📷 Camera
+</button>
+
+<button class="device-btn"
+onclick="addDevice('rack')">
+🗄 Rack
+</button>
+
+<button class="device-btn"
+onclick="addDevice('switch')">
+🖧 Switch
+</button>
+
+<button class="device-btn"
+onclick="addDevice('router')">
+📡 Router
+</button>
+
+<button class="device-btn"
+onclick="addDevice('wifi')">
+📶 WiFi AP
+</button>
+
+<button class="device-btn"
+onclick="addDevice('door')">
+🚪 Door
+</button>
+
+<button class="device-btn"
+onclick="addDevice('barrier')">
+⛔ Barrier Gate
+</button>
+
+<button class="device-btn"
+onclick="addDevice('nvr')">
+💽 NVR
+</button>
+
+<button class="device-btn"
+onclick="addDevice('manhole')">
+⭕ Manhole
+</button>
+
+</div>
+
+<div class="section">
+
+<h3>Legend</h3>
+
+<div class="legend-item">
+<div class="color-box"
+style="background:red"></div>
+<span>Core 1</span>
+</div>
+
+<div class="legend-item">
+<div class="color-box"
+style="background:blue"></div>
+<span>Core 2</span>
+</div>
+
+<div class="legend-item">
+<div class="color-box"
+style="background:yellow"></div>
+<span>Core 3</span>
+</div>
+
+<div class="legend-item">
+<div class="color-box"
+style="background:green"></div>
+<span>Core 4</span>
+</div>
+
+<div class="legend-item">
+<div class="color-box"
+style="background:orange"></div>
+<span>Core 5</span>
+</div>
+
+<div class="legend-item">
+<div class="color-box"
+style="background:purple"></div>
+<span>Core 6</span>
+</div>
+
+</div>
+
+</div>
+
+<!-- =======================
+CANVAS
+======================= -->
+
+<div id="canvas-container">
+
+<button id="menuBtn"
+onclick="toggleSidebar()">
+☰
+</button>
+
+<div id="properties">
+
+<h3>Properties</h3>
+
+<input placeholder="Name">
+<input placeholder="IP">
+<input placeholder="Note">
+
+</div>
+
+<div id="stage-parent"></div>
+
+</div>
+
+</div>
+
+</div>
 
 <script>
 
+/* =======================
+PDF JS
+======================= */
+
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+/* =======================
+STAGE
+======================= */
+
 const stage = new Konva.Stage({
-  container:'stage',
+  container:'stage-parent',
   width:window.innerWidth,
   height:window.innerHeight,
   draggable:true
 });
 
-const layer = new Konva.Layer();
-stage.add(layer);
+/* =======================
+LAYERS
+======================= */
 
-let tool='move';
+const bgLayer = new Konva.Layer();
+const fiberLayer = new Konva.Layer();
+const networkLayer = new Konva.Layer();
+const cctvLayer = new Konva.Layer();
+const powerLayer = new Konva.Layer();
+const deviceLayer = new Konva.Layer();
+
+stage.add(bgLayer);
+stage.add(fiberLayer);
+stage.add(networkLayer);
+stage.add(cctvLayer);
+stage.add(powerLayer);
+stage.add(deviceLayer);
+
+/* =======================
+TOOLS
+======================= */
+
+let tool='select';
 let drawing=false;
-let activeGroup=null;
+let activeFiber=null;
 
 function setTool(t){
   tool=t;
 }
 
-// Fiber core colors (telecom standard style)
-const fiberColors = [
-  'red','blue','yellow','green','orange','purple',
-  'cyan','magenta','lime','white','pink','brown'
+/* =======================
+FIBER COLORS
+======================= */
+
+const fiberColors=[
+'red',
+'blue',
+'yellow',
+'green',
+'orange',
+'purple',
+'cyan',
+'magenta',
+'lime',
+'white',
+'pink',
+'brown'
 ];
 
-function getColors(n){
-  return fiberColors.slice(0,n);
-}
+/* =======================
+DRAW START
+======================= */
 
 stage.on('mousedown touchstart',()=>{
 
-  if(tool!=='fiber') return;
+  if(tool==='select') return;
 
   const pos = stage.getPointerPosition();
 
-  const cores = parseInt(document.getElementById('fiberCore').value);
-  const colors = getColors(cores);
+  /* =======================
+  FIBER
+  ======================= */
 
-  const group = new Konva.Group({
-    draggable:true
-  });
+  if(tool==='fiber'){
 
-  for(let i=0;i<cores;i++){
+    const coreCount =
+    parseInt(
+      document.getElementById('fiberCore').value
+    );
 
-    const line = new Konva.Line({
-      points:[pos.x, pos.y + (i*3), pos.x, pos.y + (i*3)],
-      stroke:colors[i],
-      strokeWidth:2,
-      lineCap:'round'
+    const group = new Konva.Group({
+      draggable:true
     });
 
-    group.add(line);
+    for(let i=0;i<coreCount;i++){
+
+      const line = new Konva.Line({
+
+        points:[
+          pos.x,
+          pos.y + (i*4),
+          pos.x,
+          pos.y + (i*4)
+        ],
+
+        stroke:fiberColors[i],
+        strokeWidth:2,
+        lineCap:'round'
+
+      });
+
+      group.add(line);
+
+    }
+
+    fiberLayer.add(group);
+
+    activeFiber=group;
+
+    drawing=true;
+
   }
 
-  layer.add(group);
-  activeGroup=group;
-  drawing=true;
+  /* =======================
+  NORMAL LINES
+  ======================= */
+
+  else{
+
+    let color='white';
+    let width=3;
+    let targetLayer=networkLayer;
+
+    if(tool==='network'){
+      color='deepskyblue';
+    }
+
+    if(tool==='cctv'){
+      color='limegreen';
+      targetLayer=cctvLayer;
+    }
+
+    if(tool==='power'){
+      color='red';
+      width=5;
+      targetLayer=powerLayer;
+    }
+
+    activeFiber = new Konva.Line({
+
+      points:[
+        pos.x,
+        pos.y,
+        pos.x,
+        pos.y
+      ],
+
+      stroke:color,
+      strokeWidth:width,
+      lineCap:'round'
+
+    });
+
+    targetLayer.add(activeFiber);
+
+    drawing=true;
+
+  }
 
 });
+
+/* =======================
+DRAW MOVE
+======================= */
 
 stage.on('mousemove touchmove',()=>{
 
-  if(!drawing || !activeGroup || tool!=='fiber') return;
+  if(!drawing || !activeFiber) return;
 
   const pos = stage.getPointerPosition();
 
-  const lines = activeGroup.getChildren();
+  /* =======================
+  MULTI CORE FIBER
+  ======================= */
 
-  lines.forEach((l,i)=>{
+  if(tool==='fiber'){
 
-    const pts = l.points();
+    activeFiber
+    .getChildren()
+    .forEach((line,i)=>{
 
-    l.points([
+      const pts=line.points();
+
+      line.points([
+
+        pts[0],
+        pts[1],
+
+        pos.x,
+        pos.y + (i*4)
+
+      ]);
+
+    });
+
+  }
+
+  /* =======================
+  SINGLE LINES
+  ======================= */
+
+  else{
+
+    const pts=activeFiber.points();
+
+    activeFiber.points([
       pts[0],
       pts[1],
       pos.x,
-      pos.y + (i*3)
+      pos.y
     ]);
 
-  });
+  }
 
 });
+
+/* =======================
+DRAW END
+======================= */
 
 stage.on('mouseup touchend',()=>{
 
   drawing=false;
-  activeGroup=null;
+  activeFiber=null;
 
 });
+
+/* =======================
+DEVICES
+======================= */
+
+function addDevice(type){
+
+  const icons={
+
+    camera:'📷',
+    rack:'🗄',
+    switch:'🖧',
+    router:'📡',
+    wifi:'📶',
+    door:'🚪',
+    barrier:'⛔',
+    nvr:'💽',
+    manhole:'⭕'
+
+  };
+
+  const group = new Konva.Group({
+
+    x:200,
+    y:200,
+    draggable:true
+
+  });
+
+  const bg = new Konva.Rect({
+
+    width:50,
+    height:50,
+    fill:'rgba(0,0,0,0.3)',
+    cornerRadius:10
+
+  });
+
+  const icon = new Konva.Text({
+
+    text:icons[type],
+    fontSize:30,
+    x:10,
+    y:8,
+    fill:'white'
+
+  });
+
+  group.add(bg);
+  group.add(icon);
+
+  deviceLayer.add(group);
+
+}
+
+/* =======================
+UPLOAD PDF / IMAGE
+======================= */
+
+document
+.getElementById('upload')
+.addEventListener('change',async(e)=>{
+
+  const file=e.target.files[0];
+
+  if(!file) return;
+
+  /* =======================
+  PDF
+  ======================= */
+
+  if(file.type==='application/pdf'){
+
+    const reader = new FileReader();
+
+    reader.onload = async function(){
+
+      const typedarray =
+      new Uint8Array(this.result);
+
+      const pdf =
+      await pdfjsLib
+      .getDocument(typedarray)
+      .promise;
+
+      const page =
+      await pdf.getPage(1);
+
+      const viewport =
+      page.getViewport({scale:2});
+
+      const canvas =
+      document.createElement('canvas');
+
+      const context =
+      canvas.getContext('2d');
+
+      canvas.width=viewport.width;
+      canvas.height=viewport.height;
+
+      await page.render({
+
+        canvasContext:context,
+        viewport:viewport
+
+      }).promise;
+
+      const img = new Image();
+
+      img.onload=function(){
+
+        bgLayer.destroyChildren();
+
+        const bg = new Konva.Image({
+
+          image:img,
+          x:0,
+          y:0,
+          width:viewport.width,
+          height:viewport.height
+
+        });
+
+        bgLayer.add(bg);
+
+      }
+
+      img.src=canvas.toDataURL();
+
+    }
+
+    reader.readAsArrayBuffer(file);
+
+  }
+
+  /* =======================
+  IMAGE
+  ======================= */
+
+  else{
+
+    const reader = new FileReader();
+
+    reader.onload=function(ev){
+
+      const img = new Image();
+
+      img.onload=function(){
+
+        bgLayer.destroyChildren();
+
+        const bg = new Konva.Image({
+
+          image:img,
+          x:0,
+          y:0,
+          width:img.width,
+          height:img.height
+
+        });
+
+        bgLayer.add(bg);
+
+      }
+
+      img.src=ev.target.result;
+
+    }
+
+    reader.readAsDataURL(file);
+
+  }
+
+});
+
+/* =======================
+CLEAR
+======================= */
+
+function clearCanvas(){
+
+  fiberLayer.destroyChildren();
+  networkLayer.destroyChildren();
+  cctvLayer.destroyChildren();
+  powerLayer.destroyChildren();
+  deviceLayer.destroyChildren();
+
+}
+
+/* =======================
+EXPORT PDF
+======================= */
+
+function exportPDF(){
+
+  const data =
+  stage.toDataURL({
+    pixelRatio:2
+  });
+
+  const {jsPDF} = window.jspdf;
+
+  const pdf = new jsPDF(
+    'landscape',
+    'px',
+    [2000,1200]
+  );
+
+  pdf.addImage(
+    data,
+    'PNG',
+    0,
+    0,
+    2000,
+    1200
+  );
+
+  pdf.save('network-layout.pdf');
+
+}
+
+/* =======================
+MOBILE MENU
+======================= */
+
+function toggleSidebar(){
+
+  document
+  .getElementById('sidebar')
+  .classList
+  .toggle('show');
+
+}
+
+/* =======================
+RESIZE
+======================= */
 
 window.addEventListener('resize',()=>{
 
