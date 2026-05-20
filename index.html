@@ -8,9 +8,15 @@ initial-scale=1.0,
 maximum-scale=1.0,
 user-scalable=no">
 
-<title>Fiber Network Layout PRO</title>
+<title>Telecom CAD PDF Editor PRO</title>
 
+<!-- PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<!-- KONVA -->
 <script src="https://unpkg.com/konva@9/konva.min.js"></script>
+
+<!-- PDF EXPORT -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
@@ -25,8 +31,8 @@ html,body{
   width:100%;
   height:100%;
   overflow:hidden;
-  font-family:Arial;
   background:#0f172a;
+  font-family:Arial;
   color:white;
 }
 
@@ -37,31 +43,45 @@ html,body{
   flex-direction:column;
 }
 
-/* TOPBAR */
+/* =========================
+TOPBAR
+========================= */
 
 #toolbar{
   height:60px;
+  min-height:60px;
   background:#111827;
   display:flex;
   align-items:center;
   gap:8px;
   padding:8px;
   overflow-x:auto;
-  flex-shrink:0;
+  border-bottom:1px solid #1e293b;
+}
+
+#toolbar::-webkit-scrollbar{
+  display:none;
 }
 
 button,
-select,
-input{
+input,
+select{
   padding:8px 12px;
   border:none;
   border-radius:8px;
   background:#1e293b;
   color:white;
-  font-size:14px;
+  font-size:13px;
+  flex-shrink:0;
 }
 
-/* MAIN */
+button:hover{
+  background:#38bdf8;
+}
+
+/* =========================
+MAIN
+========================= */
 
 #main{
   flex:1;
@@ -69,10 +89,12 @@ input{
   overflow:hidden;
 }
 
-/* SIDEBAR */
+/* =========================
+SIDEBAR
+========================= */
 
 #sidebar{
-  width:220px;
+  width:240px;
   background:#111827;
   border-right:1px solid #1e293b;
   overflow-y:auto;
@@ -84,8 +106,8 @@ input{
 }
 
 .section h3{
-  color:#38bdf8;
   margin-bottom:10px;
+  color:#38bdf8;
 }
 
 .device-btn{
@@ -94,11 +116,14 @@ input{
   text-align:left;
 }
 
-/* CANVAS */
+/* =========================
+CANVAS
+========================= */
 
 #canvas-wrap{
   flex:1;
   position:relative;
+  overflow:hidden;
   background:#1e293b;
 }
 
@@ -107,17 +132,51 @@ input{
   height:100%;
 }
 
-/* MOBILE */
+/* =========================
+PROPERTIES
+========================= */
+
+#properties{
+  position:absolute;
+  top:10px;
+  right:10px;
+  width:220px;
+  background:#111827;
+  border:1px solid #334155;
+  border-radius:12px;
+  padding:10px;
+  z-index:100;
+}
+
+#properties input{
+  width:100%;
+  margin-bottom:8px;
+}
+
+/* =========================
+LEGEND
+========================= */
+
+.legend-item{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:4px;
+}
+
+/* =========================
+MOBILE
+========================= */
 
 @media(max-width:768px){
 
   #sidebar{
-    width:160px;
+    width:180px;
   }
 
   button,
-  select,
-  input{
+  input,
+  select{
     font-size:12px;
     padding:8px;
   }
@@ -131,56 +190,68 @@ input{
 
 <div id="app">
 
-<!-- TOOLBAR -->
+<!-- =========================
+TOPBAR
+========================= -->
 
 <div id="toolbar">
 
-<select id="fiberCore">
+<input
+type="file"
+id="pdfUpload"
+accept="application/pdf,image/*">
 
-<option value="1">1 Core</option>
-<option value="2">2 Core</option>
-<option value="4">4 Core</option>
-<option value="6">6 Core</option>
-<option value="8">8 Core</option>
-<option value="12">12 Core</option>
+<select id="toolSelect">
+
+<option value="select">
+Select
+</option>
+
+<option value="fiber">
+Fiber
+</option>
+
+<option value="network">
+Network
+</option>
+
+<option value="cctv">
+CCTV
+</option>
+
+<option value="power">
+Power
+</option>
 
 </select>
 
-<button onclick="setTool('select')">
-Select
-</button>
-
-<button onclick="setTool('fiber')">
-Fiber
-</button>
-
-<button onclick="setTool('network')">
-Network
-</button>
-
-<button onclick="setTool('cctv')">
-CCTV
-</button>
-
-<button onclick="setTool('power')">
-Power
-</button>
+<input
+type="number"
+id="fiberCores"
+placeholder="Fiber Core"
+value="12"
+min="1"
+max="144">
 
 <button onclick="clearCanvas()">
 Clear
 </button>
 
 <button onclick="exportPDF()">
-Export
+Export PDF
 </button>
 
 </div>
 
-<!-- MAIN -->
+<!-- =========================
+MAIN
+========================= -->
 
 <div id="main">
 
-<!-- SIDEBAR -->
+<!-- =========================
+SIDEBAR
+========================= -->
 
 <div id="sidebar">
 
@@ -189,57 +260,77 @@ Export
 <h3>Devices</h3>
 
 <button class="device-btn"
-onclick="addDevice('📷')">
-📷 Camera
+onclick="addDevice('📷','CCTV')">
+📷 CCTV
 </button>
 
 <button class="device-btn"
-onclick="addDevice('🗄')">
+onclick="addDevice('🗄','Rack')">
 🗄 Rack
 </button>
 
 <button class="device-btn"
-onclick="addDevice('🖧')">
+onclick="addDevice('🖧','Switch')">
 🖧 Switch
 </button>
 
 <button class="device-btn"
-onclick="addDevice('📡')">
+onclick="addDevice('📡','Router')">
 📡 Router
 </button>
 
 <button class="device-btn"
-onclick="addDevice('📶')">
-📶 AP
+onclick="addDevice('📶','WiFi')">
+📶 WiFi
 </button>
 
 <button class="device-btn"
-onclick="addDevice('🚪')">
-🚪 Door
+onclick="addDevice('🚪','Access Door')">
+🚪 Access Door
 </button>
 
 <button class="device-btn"
-onclick="addDevice('⛔')">
+onclick="addDevice('⛔','Barrier')">
 ⛔ Barrier
 </button>
 
 <button class="device-btn"
-onclick="addDevice('💽')">
+onclick="addDevice('💽','NVR')">
 💽 NVR
 </button>
 
 <button class="device-btn"
-onclick="addDevice('⭕')">
+onclick="addDevice('⭕','Manhole')">
 ⭕ Manhole
 </button>
 
 </div>
 
+<div class="section">
+
+<h3>Fiber Core Legend</h3>
+
+<div id="legend"></div>
+
 </div>
 
-<!-- CANVAS -->
+</div>
+
+<!-- =========================
+CANVAS
+========================= -->
 
 <div id="canvas-wrap">
+
+<div id="properties">
+
+<h3>Properties</h3>
+
+<input placeholder="Name">
+<input placeholder="IP Address">
+<input placeholder="Notes">
+
+</div>
 
 <div id="stage-parent"></div>
 
@@ -252,6 +343,13 @@ onclick="addDevice('⭕')">
 <script>
 
 /* =========================
+PDF JS
+========================= */
+
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+/* =========================
 STAGE
 ========================= */
 
@@ -260,14 +358,16 @@ const stage = new Konva.Stage({
   container:'stage-parent',
 
   width:
-  document.getElementById(
-    'canvas-wrap'
-  ).clientWidth,
+  document
+  .getElementById('canvas-wrap')
+  .clientWidth,
 
   height:
-  document.getElementById(
-    'canvas-wrap'
-  ).clientHeight
+  document
+  .getElementById('canvas-wrap')
+  .clientHeight,
+
+  draggable:true
 
 });
 
@@ -275,27 +375,85 @@ const stage = new Konva.Stage({
 LAYERS
 ========================= */
 
-const bgLayer = new Konva.Layer();
-const drawLayer = new Konva.Layer();
-const deviceLayer = new Konva.Layer();
+const gridLayer =
+new Konva.Layer();
 
-stage.add(bgLayer);
-stage.add(drawLayer);
+const pdfLayer =
+new Konva.Layer();
+
+const cableLayer =
+new Konva.Layer();
+
+const deviceLayer =
+new Konva.Layer();
+
+stage.add(gridLayer);
+stage.add(pdfLayer);
+stage.add(cableLayer);
 stage.add(deviceLayer);
 
 /* =========================
-TOOLS
+GRID
 ========================= */
 
-let currentTool='select';
-let drawing=false;
-let activeShape=null;
+function drawGrid(){
+
+  const size = 50;
+
+  for(let i=0;i<5000/size;i++){
+
+    gridLayer.add(
+
+      new Konva.Line({
+
+        points:[
+          i*size,
+          0,
+          i*size,
+          5000
+        ],
+
+        stroke:'#1e293b',
+        strokeWidth:1
+
+      })
+
+    );
+
+  }
+
+  for(let j=0;j<5000/size;j++){
+
+    gridLayer.add(
+
+      new Konva.Line({
+
+        points:[
+          0,
+          j*size,
+          5000,
+          j*size
+        ],
+
+        stroke:'#1e293b',
+        strokeWidth:1
+
+      })
+
+    );
+
+  }
+
+}
+
+drawGrid();
 
 /* =========================
-FIBER COLORS
+TELECOM COLORS
 ========================= */
 
-const fiberColors=[
+const telecomColors=[
+
 'red',
 'blue',
 'yellow',
@@ -307,40 +465,116 @@ const fiberColors=[
 'lime',
 'white',
 'pink',
-'brown'
+'brown',
+
+'#ff4444',
+'#4488ff',
+'#ffee44',
+'#44ff44',
+'#ff8800',
+'#8844ff',
+'#00ffff',
+'#ff00ff',
+'#88ff00',
+'#cccccc',
+'#ff99cc',
+'#8B4513'
+
 ];
 
 /* =========================
-SET TOOL
+LEGEND
 ========================= */
 
-function setTool(tool){
+function updateLegend(){
 
-  currentTool=tool;
+  const total =
+  parseInt(
+    document
+    .getElementById('fiberCores')
+    .value
+  );
+
+  const legend =
+  document.getElementById(
+    'legend'
+  );
+
+  legend.innerHTML='';
+
+  for(let i=0;i<total;i++){
+
+    const row =
+    document.createElement('div');
+
+    row.className='legend-item';
+
+    row.innerHTML=`
+
+    <div style="
+    width:18px;
+    height:18px;
+    background:
+    ${telecomColors[i%telecomColors.length]};
+    border-radius:4px;
+    "></div>
+
+    <span>
+    Core ${i+1}
+    </span>
+
+    `;
+
+    legend.appendChild(row);
+
+  }
 
 }
 
+updateLegend();
+
+document
+.getElementById('fiberCores')
+.addEventListener(
+'input',
+updateLegend
+);
+
 /* =========================
-DRAW START
+TOOLS
+========================= */
+
+let drawing=false;
+let activeCable=null;
+
+/* =========================
+START DRAW
 ========================= */
 
 stage.on('mousedown touchstart',()=>{
 
-  if(currentTool==='select')
+  const tool =
+  document
+  .getElementById('toolSelect')
+  .value;
+
+  if(tool==='select')
   return;
 
   const pos =
   stage.getPointerPosition();
 
-  /* FIBER */
+  /* =========================
+  FIBER
+  ========================= */
 
-  if(currentTool==='fiber'){
+  if(tool==='fiber'){
 
-    const coreCount =
+    const cores =
     parseInt(
-      document.getElementById(
-        'fiberCore'
-      ).value
+      document
+      .getElementById('fiberCores')
+      .value
     );
 
     const group =
@@ -348,20 +582,22 @@ stage.on('mousedown touchstart',()=>{
       draggable:true
     });
 
-    for(let i=0;i<coreCount;i++){
+    for(let i=0;i<cores;i++){
 
       const line =
       new Konva.Line({
 
         points:[
           pos.x,
-          pos.y+(i*4),
+          pos.y+(i*3),
           pos.x,
-          pos.y+(i*4)
+          pos.y+(i*3)
         ],
 
         stroke:
-        fiberColors[i],
+        telecomColors[
+          i % telecomColors.length
+        ],
 
         strokeWidth:2,
 
@@ -373,33 +609,35 @@ stage.on('mousedown touchstart',()=>{
 
     }
 
-    drawLayer.add(group);
+    cableLayer.add(group);
 
-    activeShape=group;
+    activeCable=group;
 
   }
 
-  /* NORMAL LINES */
+  /* =========================
+  NORMAL CABLES
+  ========================= */
 
   else{
 
     let color='white';
     let width=3;
 
-    if(currentTool==='network'){
+    if(tool==='network'){
       color='deepskyblue';
     }
 
-    if(currentTool==='cctv'){
+    if(tool==='cctv'){
       color='limegreen';
     }
 
-    if(currentTool==='power'){
+    if(tool==='power'){
       color='red';
       width=5;
     }
 
-    activeShape =
+    activeCable =
     new Konva.Line({
 
       points:[
@@ -419,37 +657,39 @@ stage.on('mousedown touchstart',()=>{
 
     });
 
-    drawLayer.add(activeShape);
+    cableLayer.add(activeCable);
 
   }
 
   drawing=true;
 
-  drawLayer.draw();
-
 });
 
 /* =========================
-DRAW MOVE
+MOVE DRAW
 ========================= */
 
 stage.on('mousemove touchmove',()=>{
 
-  if(!drawing || !activeShape)
+  if(!drawing || !activeCable)
   return;
+
+  const tool =
+  document
+  .getElementById('toolSelect')
+  .value;
 
   const pos =
   stage.getPointerPosition();
 
-  /* FIBER */
+  if(tool==='fiber'){
 
-  if(currentTool==='fiber'){
-
-    activeShape
+    activeCable
     .getChildren()
     .forEach((line,i)=>{
 
-      const pts=line.points();
+      const pts =
+      line.points();
 
       line.points([
 
@@ -457,7 +697,7 @@ stage.on('mousemove touchmove',()=>{
         pts[1],
 
         pos.x,
-        pos.y+(i*4)
+        pos.y+(i*3)
 
       ]);
 
@@ -465,14 +705,12 @@ stage.on('mousemove touchmove',()=>{
 
   }
 
-  /* NORMAL */
-
   else{
 
     const pts =
-    activeShape.points();
+    activeCable.points();
 
-    activeShape.points([
+    activeCable.points([
 
       pts[0],
       pts[1],
@@ -484,18 +722,18 @@ stage.on('mousemove touchmove',()=>{
 
   }
 
-  drawLayer.batchDraw();
+  cableLayer.batchDraw();
 
 });
 
 /* =========================
-DRAW END
+END DRAW
 ========================= */
 
 stage.on('mouseup touchend',()=>{
 
   drawing=false;
-  activeShape=null;
+  activeCable=null;
 
 });
 
@@ -503,13 +741,14 @@ stage.on('mouseup touchend',()=>{
 ADD DEVICE
 ========================= */
 
-function addDevice(icon){
+function addDevice(icon,name){
 
   const group =
   new Konva.Group({
 
     x:200,
     y:200,
+
     draggable:true
 
   });
@@ -517,10 +756,13 @@ function addDevice(icon){
   const rect =
   new Konva.Rect({
 
-    width:50,
-    height:50,
+    width:60,
+    height:60,
+
     fill:'#111827',
+
     stroke:'#38bdf8',
+
     cornerRadius:10
 
   });
@@ -529,21 +771,250 @@ function addDevice(icon){
   new Konva.Text({
 
     text:icon,
-    fontSize:28,
-    x:10,
+
+    fontSize:32,
+
+    x:12,
     y:8,
+
+    fill:'white'
+
+  });
+
+  const label =
+  new Konva.Text({
+
+    text:name,
+
+    fontSize:12,
+
+    y:65,
+
     fill:'white'
 
   });
 
   group.add(rect);
   group.add(text);
+  group.add(label);
 
   deviceLayer.add(group);
 
-  deviceLayer.draw();
-
 }
+
+/* =========================
+UPLOAD PDF / IMAGE
+========================= */
+
+document
+.getElementById('pdfUpload')
+.addEventListener(
+'change',
+async(e)=>{
+
+  const file=e.target.files[0];
+
+  if(!file) return;
+
+  /* PDF */
+
+  if(file.type==='application/pdf'){
+
+    const reader =
+    new FileReader();
+
+    reader.onload =
+    async function(){
+
+      const typedarray =
+      new Uint8Array(
+        this.result
+      );
+
+      const pdf =
+      await pdfjsLib
+      .getDocument(typedarray)
+      .promise;
+
+      const page =
+      await pdf.getPage(1);
+
+      const viewport =
+      page.getViewport({
+        scale:2
+      });
+
+      const canvas =
+      document.createElement(
+        'canvas'
+      );
+
+      const context =
+      canvas.getContext('2d');
+
+      canvas.width=
+      viewport.width;
+
+      canvas.height=
+      viewport.height;
+
+      await page.render({
+
+        canvasContext:context,
+
+        viewport:viewport
+
+      }).promise;
+
+      const img =
+      new Image();
+
+      img.onload=function(){
+
+        pdfLayer.destroyChildren();
+
+        const bg =
+        new Konva.Image({
+
+          image:img,
+
+          x:0,
+          y:0,
+
+          width:
+          viewport.width,
+
+          height:
+          viewport.height
+
+        });
+
+        pdfLayer.add(bg);
+
+        pdfLayer.draw();
+
+      }
+
+      img.src=
+      canvas.toDataURL();
+
+    }
+
+    reader.readAsArrayBuffer(file);
+
+  }
+
+  /* IMAGE */
+
+  else{
+
+    const reader =
+    new FileReader();
+
+    reader.onload=
+    function(ev){
+
+      const img =
+      new Image();
+
+      img.onload=
+      function(){
+
+        pdfLayer.destroyChildren();
+
+        const bg =
+        new Konva.Image({
+
+          image:img,
+
+          x:0,
+          y:0,
+
+          width:img.width,
+
+          height:img.height
+
+        });
+
+        pdfLayer.add(bg);
+
+        pdfLayer.draw();
+
+      }
+
+      img.src=
+      ev.target.result;
+
+    }
+
+    reader.readAsDataURL(file);
+
+  }
+
+});
+
+/* =========================
+ZOOM
+========================= */
+
+stage.on('wheel',(e)=>{
+
+  e.evt.preventDefault();
+
+  const scaleBy=1.05;
+
+  const oldScale=
+  stage.scaleX();
+
+  const pointer=
+  stage.getPointerPosition();
+
+  const mousePointTo={
+
+    x:
+    (pointer.x-stage.x())
+    /oldScale,
+
+    y:
+    (pointer.y-stage.y())
+    /oldScale
+
+  };
+
+  const direction=
+  e.evt.deltaY>0
+  ? -1
+  : 1;
+
+  const newScale=
+  direction>0
+  ? oldScale*scaleBy
+  : oldScale/scaleBy;
+
+  stage.scale({
+    x:newScale,
+    y:newScale
+  });
+
+  const newPos={
+
+    x:
+    pointer.x -
+    mousePointTo.x
+    *newScale,
+
+    y:
+    pointer.y -
+    mousePointTo.y
+    *newScale
+
+  };
+
+  stage.position(newPos);
+
+  stage.batchDraw();
+
+});
 
 /* =========================
 CLEAR
@@ -551,10 +1022,10 @@ CLEAR
 
 function clearCanvas(){
 
-  drawLayer.destroyChildren();
+  cableLayer.destroyChildren();
   deviceLayer.destroyChildren();
 
-  drawLayer.draw();
+  cableLayer.draw();
   deviceLayer.draw();
 
 }
@@ -584,20 +1055,16 @@ async function exportPDF(){
   );
 
   pdf.addImage(
-
     data,
     'PNG',
-
     0,
     0,
-
     stage.width(),
     stage.height()
-
   );
 
   pdf.save(
-    'network-layout.pdf'
+    'telecom-layout.pdf'
   );
 
 }
@@ -611,19 +1078,19 @@ window.addEventListener(
 ()=>{
 
   stage.width(
-
-    document.getElementById(
+    document
+    .getElementById(
       'canvas-wrap'
-    ).clientWidth
-
+    )
+    .clientWidth
   );
 
   stage.height(
-
-    document.getElementById(
+    document
+    .getElementById(
       'canvas-wrap'
-    ).clientHeight
-
+    )
+    .clientHeight
   );
 
 });
